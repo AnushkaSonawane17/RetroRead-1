@@ -17,11 +17,11 @@ const app = express();
 
 app.use(express.json());
 
-//const userRoute = require("./Route/userRoute");
+const userRoute = require("./Route/userRoute");
 
 databaseConnection();
 
-//app.use("/user", userRoute);
+app.use("/user", userRoute);
 
 app.listen(5000, () => {
     console.log("Server is listening on port 5000");
