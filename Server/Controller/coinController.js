@@ -145,5 +145,5 @@ const handleAddCoins = async (req, res) => {
 };
 
 module.exports = {
-    handleDailyBonus, handleGetTransactions, handleGetBalance, handleAddCoins 
+    handleDailyBonus, handleGetTransactions, handleGetBalance, handleAddCoins,addCoinsToUser
 };
