@@ -1,5 +1,29 @@
 const Coin = require("../Model/coinModel");
 const Transaction = require("../Model/transactionModel");
+const addCoinsToUser = async (userId, coins, type, description) => {
+
+    let coinData = await Coin.findOne({ userId });
+
+    if (!coinData) {
+        coinData = await Coin.create({
+            userId,
+            balance: 0
+        });
+    }
+
+    coinData.balance += coins;
+
+    await coinData.save();
+
+    await Transaction.create({
+        userId,
+        type,
+        coins,
+        description
+    });
+
+    return coinData.balance;
+};
 
 const handleDailyBonus = async (req, res) => {
     try {
@@ -35,21 +59,15 @@ const handleDailyBonus = async (req, res) => {
         }
 
         // Add 25 coins
-        coinData.balance += 25;
+        const newBalance = await addCoinsToUser(
+    userId,
+    25,
+    "Daily Bonus",
+    "Daily bonus claimed"
+);
 
-        // Update bonus time
         coinData.lastDailyBonus = now;
-
         await coinData.save();
-
-        // Create transaction
-        await Transaction.create({
-            userId,
-            type: "Daily Bonus",
-            coins: 25,
-            description: "Daily bonus claimed"
-        });
-
         return res.status(200).json({
             Message: "Daily bonus added",
             balance: coinData.balance
@@ -107,35 +125,16 @@ const handleAddCoins = async (req, res) => {
     try {
         const { userId, coins, type, description } = req.body;
 
-        if (!userId || !coins || !type) {
-            return res.status(400).json({
-                Message: "Required data missing"
-            });
-        }
-
-        let coinData = await Coin.findOne({ userId });
-
-        if (!coinData) {
-            coinData = await Coin.create({
-                userId,
-                balance: 0
-            });
-        }
-
-        coinData.balance += coins;
-
-        await coinData.save();
-
-        await Transaction.create({
+        const newBalance = await addCoinsToUser(
             userId,
-            type,
             coins,
+            type,
             description
-        });
+        );
 
         return res.status(200).json({
             Message: "Coins added",
-            balance: coinData.balance
+            balance: newBalance
         });
 
     } catch (err) {
