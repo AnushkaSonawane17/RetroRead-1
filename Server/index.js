@@ -21,6 +21,7 @@ const userRoute = require("./Route/userRoute");
 const coinRoute = require("./Route/coinRoute");
 const streakRoute = require("./Route/streakRoute");
 const triviaRoute = require("./Route/triviaRoute");
+const guessBookRoute = require("./Route/guessBookRoute");
 
 databaseConnection();
 
@@ -28,7 +29,7 @@ app.use("/user", userRoute);
 app.use("/coin", coinRoute);
 app.use("/streak", streakRoute);
 app.use("/trivia", triviaRoute);
-
+app.use("/guessbook", guessBookRoute);
 
 app.listen(5000, () => {
     console.log("Server is listening on port 5000");
