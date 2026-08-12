@@ -11,16 +11,16 @@ const addCoinsToUser = async (userId, coins, type, description) => {
         });
     }
 
-    coinData.balance += coins;
+    coinData.balance += Number(coins);
 
     await coinData.save();
 
     await Transaction.create({
-        userId,
-        type,
-        coins,
-        description
-    });
+    userId,
+    type,
+    coins: Number(coins),
+    description
+});
 
     return coinData.balance;
 };
