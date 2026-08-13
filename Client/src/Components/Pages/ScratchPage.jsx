@@ -6,7 +6,7 @@ const prizes = [
   { icon: Star, prize: '20 KOINS', color: '#A9812F' },
   { icon: Sparkles, prize: '50 KOINS', color: '#5C7A93' },
   { icon: PartyPopper, prize: '100 KOINS', color: '#D8472F' },
-  { icon: BookOpen, prize: 'Free Book', color: '#6B8F55' },
+  // { icon: BookOpen, prize: 'Free Book', color: '#6B8F55' },
   { icon: Trophy, prize: '200 KOINS', color: '#8B4C6D' },
   { icon: Gift, prize: '25 KOINS', color: '#3E7C74' },
 ];
