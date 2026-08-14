@@ -105,9 +105,25 @@ const MarketplacePage = () => {
   }, [searchTerm, filter, category, sortBy, allBooks]);
 
   // ✅ Handle Claim button click
-  const handleClaim = (bookId) => {
-    navigate(`/claim-book?bookId=${bookId}`);
-  };
+ const handleClaim = (bookId) => {
+
+  const selectedBook = allBooks.find(
+    (book) => String(book.id) === String(bookId)
+  );
+
+  if (!selectedBook) {
+    alert("Book details could not be found.");
+    return;
+  }
+
+  // Save the exact book the user clicked
+  localStorage.setItem(
+    "selectedClaimBook",
+    JSON.stringify(selectedBook)
+  );
+
+  navigate(`/claim-book?bookId=${bookId}`);
+};
 
   // ✅ Handle Sell button click
   const handleSell = (bookId) => {

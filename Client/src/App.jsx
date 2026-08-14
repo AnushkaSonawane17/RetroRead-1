@@ -13,7 +13,6 @@ import RegisterPage from './Components/Pages/RegisterPage';
 import LibraryPage from './Components/Pages/LibraryPage';
 import MarketplacePage from './Components/Pages/MarketplacePage';
 import ExchangePage from './Components/Pages/ExchangePage';
-import CommunityPage from './Components/Pages/CommunityPage';
 import ProfilePage from './Components/Pages/ProfilePage';
 import SearchPage from './Components/Pages/SearchPage';
 import BookDetailsPage from './Components/Pages/BookDetailsPage';
@@ -22,6 +21,8 @@ import UserLoginPage from './Components/Pages/UserLoginPage';
 import SellerSignupPage from './Components/Pages/SellerSignupPage';
 import ClaimBookPage from './Components/Pages/ClaimBookPage';
 import SellBookPage from './Components/Pages/SellBookPage';
+import OrdersPage from './Components/Pages/OrdersPage';
+
 
 // Gamification Pages
 import GamificationPage from './Components/Pages/GamificationPage';
@@ -29,9 +30,7 @@ import BadgesPage from './Components/Pages/BadgesPage';
 import KoinsPage from './Components/Pages/KoinsPage';
 import TriviaPage from './Components/Pages/TriviaPage';
 import GuessPage from './Components/Pages/GuessPage';
-import StreakPage from './Components/Pages/StreakPage';
 import ScratchPage from './Components/Pages/ScratchPage';
-import ProgressPage from './Components/Pages/ProgressPage';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -50,14 +49,18 @@ function App() {
   }, []);
 
   const ProtectedRoute = ({ children, requiredRole }) => {
-    if (!isAuthenticated) {
-      return <Navigate to="/login" replace />;
+    const loggedIn = localStorage.getItem("isAuthenticated") === "true";
+
+    if (!loggedIn) {
+        return <Navigate to="/login" replace />;
     }
+
     if (requiredRole && userRole !== requiredRole) {
-      return <Navigate to="/" replace />;
+        return <Navigate to="/" replace />;
     }
+
     return children;
-  };
+};
 
   return (
     <div className="app-container">
@@ -71,6 +74,8 @@ function App() {
           <Route path="/seller-login" element={<SellerLoginPage />} />
           <Route path="/user-login" element={<UserLoginPage />} />
           <Route path="/seller-signup" element={<SellerSignupPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+<Route path="/claim-book" element={<ClaimBookPage />} />
 
           {/* ===== PROTECTED ROUTES ===== */}
           <Route path="/library" element={
@@ -88,9 +93,6 @@ function App() {
           } />
           <Route path="/exchange" element={
             <ProtectedRoute><ExchangePage /></ProtectedRoute>
-          } />
-          <Route path="/community" element={
-            <ProtectedRoute><CommunityPage /></ProtectedRoute>
           } />
           <Route path="/profile" element={
             <ProtectedRoute><ProfilePage /></ProtectedRoute>
@@ -118,14 +120,8 @@ function App() {
           <Route path="/gamification/guess" element={
             <ProtectedRoute><GuessPage /></ProtectedRoute>
           } />
-          <Route path="/gamification/streak" element={
-            <ProtectedRoute><StreakPage /></ProtectedRoute>
-          } />
           <Route path="/gamification/scratch" element={
             <ProtectedRoute><ScratchPage /></ProtectedRoute>
-          } />
-          <Route path="/gamification/progress" element={
-            <ProtectedRoute><ProgressPage /></ProtectedRoute>
           } />
           
           {/* ===== 404 ===== */}

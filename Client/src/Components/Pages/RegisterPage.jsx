@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, AtSign, Eye, EyeOff, BookOpen, Sparkles, ArrowRight, CheckCircle, Store } from 'lucide-react';
@@ -14,17 +15,38 @@ const RegisterPage = () => {
 
   React.useEffect(() => { setMounted(true); }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Save user data
-    localStorage.setItem('userType', userType);
-    localStorage.setItem('userEmail', formData.email);
-    localStorage.setItem('userName', formData.name);
-    localStorage.setItem('isAuthenticated', 'true');
-    
-    // Navigate to login page
-    navigate('/login');
-  };
+
+    if (formData.password !== formData.confirmPassword) {
+        alert("Passwords do not match");
+        return;
+    }
+
+    try {
+        const response = await axios.post(
+            "http://localhost:5000/user/adduser",
+            {
+                userEmail: formData.email,
+                userPassword: formData.password
+            }
+        );
+
+        console.log(response.data);
+
+        alert("Account created successfully!");
+
+        navigate("/login");
+
+    } catch (err) {
+        console.log(err);
+
+        alert(
+            err.response?.data?.Message ||
+            "Something went wrong"
+        );
+    }
+};
 
   const checkPasswordStrength = (pass) => {
     let strength = 0;

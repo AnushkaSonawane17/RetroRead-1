@@ -1,35 +1,45 @@
 const mongoose = require("mongoose");
 
-const badgeSchema = new mongoose.Schema({
+const userBadgeSchema = new mongoose.Schema(
+    {
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        },
 
-    name: {
-        type: String,
-        required: true,
-        unique: true
+        badgeId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Badge",
+            required: true
+        },
+
+        progress: {
+            type: Number,
+            default: 0
+        },
+
+        unlocked: {
+            type: Boolean,
+            default: false
+        },
+
+        earnedAt: {
+            type: Date,
+            default: null
+        }
     },
-
-    description: {
-        type: String,
-        required: true
-    },
-
-    icon: {
-        type: String,
-        required: true
-    },
-
-    requirementType: {
-        type: String,
-        required: true
-    },
-
-    target: {
-        type: Number,
-        required: true
+    {
+        timestamps: true
     }
+);
 
-});
 
-const Badge = mongoose.model("Badge", badgeSchema);
+// Reuse the existing model if it has already been created
+const UserBadge =
+    mongoose.models.UserBadge ||
+    mongoose.connection.models.UserBadge ||
+    mongoose.model("UserBadge", userBadgeSchema);
 
-module.exports = Badge;
+
+module.exports = UserBadge;

@@ -1,306 +1,731 @@
 // src/Components/Pages/ClaimBookPage.jsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { 
-  BookOpen, User, MapPin, Phone, Mail, 
-  CheckCircle, ArrowLeft, Sparkles, Shield,
-  MessageCircle, Clock
-} from 'lucide-react';
+
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
+
+import {
+  BookOpen,
+  User,
+  MapPin,
+  Phone,
+  Mail,
+  CheckCircle,
+  ArrowLeft,
+  Shield,
+  MessageCircle,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
 
 const ClaimBookPage = () => {
+
   const navigate = useNavigate();
-  const location = useLocation();
+
+  // ===============================
+  // STATES
+  // ===============================
+
   const [mounted, setMounted] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [userMessage, setUserMessage] = useState("");
+
+  const [orderPlaced, setOrderPlaced] = useState(false);
+
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    pincode: '',
-    message: '',
-    agreeTerms: false
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    pincode: "",
+    message: "",
+    agreeTerms: false,
   });
+
   const [bookDetails, setBookDetails] = useState(null);
 
-  React.useEffect(() => { setMounted(true); }, []);
+
+  // ===============================
+  // LOAD PAGE
+  // ===============================
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const bookId = params.get('bookId');
-    if (bookId) {
-      const sampleBook = {
-        id: parseInt(bookId),
-        title: "Atomic Habits",
-        author: "James Clear",
-        price: 349,
-        condition: "Like New",
-        seller: "Ananya Rao",
-        sellerRating: 4.9,
-        city: "Mumbai",
-        image: "https://covers.openlibrary.org/b/isbn/9780735211292-L.jpg"
-      };
-      setBookDetails(sampleBook);
-    }
-  }, [location]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      navigate('/marketplace?claimed=true');
-    }, 1500);
+    setMounted(true);
+
+    // Get the exact book selected from Marketplace
+    const savedBook = localStorage.getItem("selectedClaimBook");
+
+    if (savedBook) {
+
+      try {
+
+        const book = JSON.parse(savedBook);
+
+        setBookDetails({
+          ...book,
+
+          // Make sure these values exist
+          condition:
+            book.condition === "like new"
+              ? "Like New"
+              : book.condition === "good"
+              ? "Good"
+              : "Used",
+
+          sellerRating: book.rating || 0,
+
+          image: book.isbn
+            ? `https://covers.openlibrary.org/b/isbn/${book.isbn}-L.jpg`
+            : "",
+        });
+
+      } catch (error) {
+
+        console.log("Error loading selected book:", error);
+
+        setBookDetails(null);
+      }
+
+    } else {
+
+      setBookDetails(null);
+    }
+
+  }, []);
+
+
+  // ===============================
+  // HANDLE INPUT
+  // ===============================
+
+  const handleChange = (e) => {
+
+    const { name, value, type, checked } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+
+    // Remove error message while typing
+    setUserMessage("");
   };
 
+
+  // ===============================
+  // SUBMIT CLAIM
+  // ===============================
+
+  const handleSubmit = async (e) => {
+
+    e.preventDefault();
+
+    setUserMessage("");
+
+    setIsSubmitting(true);
+
+    try {
+
+      // ===============================
+      // CHECK USER IN DATABASE
+      // ===============================
+
+      const response = await axios.post(
+        "http://localhost:5000/user/checkuser",
+        {
+          userEmail: formData.email,
+        }
+      );
+
+
+      // ===============================
+      // USER EXISTS
+      // ===============================
+
+      if (response.status === 200) {
+
+        console.log("USER FOUND:", response.data);
+
+        // Small delay just for UI
+        setTimeout(() => {
+
+          setIsSubmitting(false);
+
+          setOrderPlaced(true);
+
+        }, 800);
+      }
+
+    } catch (error) {
+
+      console.log("CHECK USER ERROR:", error);
+
+      setIsSubmitting(false);
+
+      // ===============================
+      // USER DOES NOT EXIST
+      // ===============================
+
+      if (error.response?.status === 404) {
+
+        setUserMessage(
+          "No account was found with this email. Please create an account on RetroRead first."
+        );
+
+        return;
+      }
+
+
+      // ===============================
+      // SERVER ERROR
+      // ===============================
+
+      setUserMessage(
+        "Something went wrong while checking your account. Please try again."
+      );
+    }
+  };
+
+
+  // ===============================
+  // LOADING BOOK
+  // ===============================
+
   if (!bookDetails) {
+
     return (
       <div className="min-h-screen bg-[#F6EFE3] flex items-center justify-center">
+
         <div className="text-center">
-          <div className="text-4xl animate-pulse">📖</div>
-          <p className="text-gray-500 mt-3">Loading book details...</p>
+
+          <div className="text-4xl animate-pulse">
+            📖
+          </div>
+
+          <p className="text-gray-500 mt-3">
+            Loading book details...
+          </p>
+
+          <button
+            onClick={() => navigate("/marketplace")}
+            className="mt-4 text-sm text-[#6B4C82] hover:underline"
+          >
+            Back to Marketplace
+          </button>
+
         </div>
+
       </div>
     );
   }
 
+
+  // ===============================
+  // ORDER SUCCESS SCREEN
+  // ===============================
+
+  if (orderPlaced) {
+
+    return (
+      <div className="min-h-screen w-full bg-[#F6EFE3] flex items-center justify-center px-4">
+
+        <div className="bg-[#FFFBF3] border border-[#E2D5BC] rounded-3xl shadow-xl max-w-lg w-full p-8 text-center">
+
+          <div className="mx-auto w-20 h-20 rounded-full bg-[#3E6B52]/10 flex items-center justify-center mb-5">
+
+            <CheckCircle
+              size={42}
+              className="text-[#3E6B52]"
+            />
+
+          </div>
+
+          <h1 className="font-display text-3xl font-bold text-[#1E2A42]">
+            Order Placed Successfully!
+          </h1>
+
+          <p className="text-[#8A7F6B] mt-3">
+            Your order for{" "}
+            <span className="font-semibold text-[#1E2A42]">
+              {bookDetails.title}
+            </span>{" "}
+            has been placed.
+          </p>
+
+          <div className="mt-6 bg-[#F6EFE3] rounded-2xl p-5 text-left">
+
+            <div className="flex gap-4">
+
+              {bookDetails.image && (
+                <img
+                  src={bookDetails.image}
+                  alt={bookDetails.title}
+                  className="w-20 h-28 object-cover rounded-lg shadow"
+                />
+              )}
+
+              <div>
+
+                <h3 className="font-semibold text-[#1E2A42]">
+                  {bookDetails.title}
+                </h3>
+
+                <p className="text-sm text-[#5B6478] mt-1">
+                  {bookDetails.author}
+                </p>
+
+                <p className="text-lg font-bold text-[#6B4C82] mt-2">
+                  ₹{bookDetails.price}
+                </p>
+
+                <p className="text-xs text-[#8A7F6B] mt-2">
+                  Seller: {bookDetails.seller}
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          {/* PAYMENT MESSAGE */}
+
+          <div className="mt-5 p-4 bg-[#C9A567]/10 border border-[#C9A567]/30 rounded-xl">
+
+            <p className="text-sm font-semibold text-[#1E2A42]">
+              💰 Payment Information
+            </p>
+
+            <p className="text-xs text-[#5B6478] mt-1">
+              You can pay the seller after the book has been delivered.
+            </p>
+
+          </div>
+
+
+          <p className="text-xs text-[#8A7F6B] mt-5 flex items-center justify-center gap-1">
+
+            <Clock size={13} />
+
+            The seller will contact you within 24 hours.
+
+          </p>
+
+
+          <button
+            onClick={() => {
+
+              localStorage.removeItem("selectedClaimBook");
+
+              navigate("/marketplace");
+
+            }}
+            className="mt-6 w-full py-3 bg-[#C9A567] text-[#1E2A42] rounded-full font-semibold hover:bg-[#B8934F] transition"
+          >
+            Back to Marketplace
+          </button>
+
+        </div>
+
+      </div>
+    );
+  }
+
+
+  // ===============================
+  // MAIN CLAIM PAGE
+  // ===============================
+
   return (
+
     <div className="min-h-screen w-full relative flex items-center justify-center px-4 py-10 overflow-hidden">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap');
-        .font-display { font-family: 'Fraunces', serif; }
-        .font-body { font-family: 'Work Sans', sans-serif; }
 
-        .glass-card {
-          background: rgba(255,251,243,0.82);
-          backdrop-filter: blur(24px);
-          border: 1px solid rgba(255,255,255,0.5);
-          box-shadow: 0 40px 80px -30px rgba(30,42,66,0.4);
-          border-radius: 32px;
-          max-width: 520px;
-          width: 100%;
-          max-height: 95vh;
-          overflow-y: auto;
-        }
-        .glass-card::-webkit-scrollbar { width: 4px; }
-        .glass-card::-webkit-scrollbar-thumb { background: #C9A567; border-radius: 4px; }
-
-        .input-field {
-          display: flex;
-          align-items: center;
-          background: rgba(255,251,243,0.5);
-          backdrop-filter: blur(6px);
-          border: 1.5px solid rgba(255,255,255,0.4);
-          border-radius: 12px;
-          transition: all 0.4s ease;
-          height: 46px;
-        }
-        .input-field:focus-within {
-          background: rgba(255,251,243,0.9);
-          border-color: #C9A567;
-          box-shadow: 0 0 0 4px rgba(201,165,103,0.08);
-          transform: translateY(-2px);
-        }
-        .input-field .icon {
-          color: #8A7F6B;
-          padding-left: 12px;
-          flex-shrink: 0;
-        }
-        .input-field:focus-within .icon { color: #C9A567; }
-        .input-field input, .input-field textarea {
-          background: transparent;
-          width: 100%;
-          padding: 0 12px;
-          height: 100%;
-          font-size: 14px;
-          color: #1E2A42;
-          outline: none;
-          border: none;
-          font-family: 'Work Sans', sans-serif;
-        }
-        .input-field textarea {
-          height: 80px;
-          padding: 12px;
-          resize: none;
-        }
-        .input-field input::placeholder, .input-field textarea::placeholder { color: #A89B8A; }
-
-        .seal-btn { position: relative; overflow: hidden; cursor: pointer; }
-        @keyframes shimmer-sweep { 0% { transform: translateX(-120%) skewX(-15deg); } 100% { transform: translateX(220%) skewX(-15deg); } }
-        .seal-btn::after { content: ""; position: absolute; top: 0; left: 0; width: 40%; height: 100%; background: linear-gradient(120deg, transparent, rgba(255,255,255,0.5), transparent); }
-        .seal-btn:hover::after { animation: shimmer-sweep 0.9s ease forwards; }
-
-        .book-preview {
-          display: flex;
-          gap: 16px;
-          padding: 16px;
-          background: rgba(255,255,255,0.3);
-          border-radius: 16px;
-          border: 1px solid rgba(255,255,255,0.3);
-        }
-        .book-preview img {
-          width: 80px;
-          height: 110px;
-          object-fit: cover;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-      `}</style>
+      {/* BACKGROUND */}
 
       <img
         src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=1600&auto=format&fit=crop"
         alt="Library"
         className="absolute inset-0 h-full w-full object-cover"
       />
+
       <div className="absolute inset-0 bg-gradient-to-b from-[#F6EFE3]/60 via-[#F6EFE3]/40 to-[#3A2A18]/50" />
 
-      <div className={`glass-card p-6 md:p-8 transition-all duration-800 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-        <Link to="/marketplace" className="inline-flex items-center gap-1.5 text-[#8A7F6B] hover:text-[#C9A567] transition text-sm mb-4">
-          <ArrowLeft size={16} /> Back to Market
+
+      {/* CARD */}
+
+      <div
+        className={`relative z-10 bg-[#FFFBF3]/90 backdrop-blur-xl border border-white/50 shadow-[0_40px_80px_-30px_rgba(30,42,66,0.4)] rounded-[32px] max-w-[520px] w-full max-h-[95vh] overflow-y-auto p-6 md:p-8 transition-all duration-700 ${
+          mounted
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
+
+
+        {/* BACK */}
+
+        <Link
+          to="/marketplace"
+          className="inline-flex items-center gap-1.5 text-[#8A7F6B] hover:text-[#C9A567] transition text-sm mb-4"
+        >
+          <ArrowLeft size={16} />
+
+          Back to Market
         </Link>
 
+
+        {/* HEADER */}
+
         <div className="flex flex-col items-center text-center mb-5">
+
           <div className="relative">
+
             <div className="absolute inset-0 rounded-full bg-[#C9A567]/20 blur-xl animate-pulse" />
+
             <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#C9A567]/10 border border-[#C9A567]/30">
-              <Shield size={20} className="text-[#C9A567]" />
+
+              <Shield
+                size={20}
+                className="text-[#C9A567]"
+              />
+
             </div>
+
           </div>
-          <span className="font-display font-semibold text-lg text-[#1E2A42] tracking-wide mt-2">Claim This Book</span>
-          <span className="text-[10px] text-[#8A7F6B] mt-0.5">Complete the form to claim your book</span>
+
+          <span className="font-display font-semibold text-lg text-[#1E2A42] tracking-wide mt-2">
+            Claim This Book
+          </span>
+
+          <span className="text-[10px] text-[#8A7F6B] mt-0.5">
+            Complete the form to claim your book
+          </span>
+
         </div>
 
-        <div className="book-preview mb-5">
-          <img src={bookDetails.image} alt={bookDetails.title} />
+
+        {/* ===============================
+            SELECTED BOOK
+        =============================== */}
+
+        <div className="flex gap-4 p-4 bg-white/30 rounded-2xl border border-white/30 mb-5">
+
+          {bookDetails.image && (
+
+            <img
+              src={bookDetails.image}
+              alt={bookDetails.title}
+              className="w-20 h-28 object-cover rounded-lg shadow"
+            />
+
+          )}
+
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-[#1E2A42] text-sm">{bookDetails.title}</h3>
-            <p className="text-xs text-[#5B6478]">{bookDetails.author}</p>
+
+            <h3 className="font-semibold text-[#1E2A42] text-sm">
+              {bookDetails.title}
+            </h3>
+
+            <p className="text-xs text-[#5B6478]">
+              {bookDetails.author}
+            </p>
+
             <div className="flex items-center gap-3 mt-1 text-xs">
-              <span className="text-[#C9A567] font-semibold">₹{bookDetails.price}</span>
-              <span className="text-[#8A7F6B]">•</span>
-              <span className="text-[#3E6B52]">{bookDetails.condition}</span>
+
+              <span className="text-[#C9A567] font-semibold">
+                ₹{bookDetails.price}
+              </span>
+
+              <span className="text-[#8A7F6B]">
+                •
+              </span>
+
+              <span className="text-[#3E6B52]">
+                {bookDetails.condition}
+              </span>
+
             </div>
+
             <div className="flex items-center gap-2 mt-1 text-xs text-[#8A7F6B]">
-              <User size={12} /> {bookDetails.seller}
-              <span className="text-[#C9A567]">★ {bookDetails.sellerRating}</span>
+
+              <User size={12} />
+
+              {bookDetails.seller}
+
+              <span className="text-[#C9A567]">
+                ★ {bookDetails.sellerRating}
+              </span>
+
             </div>
+
             <div className="flex items-center gap-1 text-xs text-[#8A7F6B]">
-              <MapPin size={12} /> {bookDetails.city}
+
+              <MapPin size={12} />
+
+              {bookDetails.city}
+
             </div>
+
           </div>
+
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+
+        {/* ===============================
+            ERROR MESSAGE
+        =============================== */}
+
+        {userMessage && (
+
+          <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 mb-4 text-sm">
+
+            <AlertCircle
+              size={17}
+              className="flex-shrink-0 mt-0.5"
+            />
+
+            <p>
+              {userMessage}
+            </p>
+
+          </div>
+
+        )}
+
+
+        {/* ===============================
+            FORM
+        =============================== */}
+
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-3"
+        >
+
+
+          {/* NAME + EMAIL */}
+
           <div className="grid grid-cols-2 gap-3">
-            <div className="input-field">
-              <User size={15} className="icon" />
-              <input 
-                type="text" 
-                placeholder="Full Name" 
+
+            <div className="flex items-center bg-white/50 border border-white/40 rounded-xl h-[46px]">
+
+              <User
+                size={15}
+                className="text-[#8A7F6B] ml-3"
+              />
+
+              <input
+                type="text"
+                name="fullName"
+                placeholder="Full Name"
                 value={formData.fullName}
-                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                required 
+                onChange={handleChange}
+                required
+                className="bg-transparent w-full px-3 h-full text-sm text-[#1E2A42] outline-none"
               />
+
             </div>
-            <div className="input-field">
-              <Mail size={15} className="icon" />
-              <input 
-                type="email" 
-                placeholder="Email" 
+
+
+            <div className="flex items-center bg-white/50 border border-white/40 rounded-xl h-[46px]">
+
+              <Mail
+                size={15}
+                className="text-[#8A7F6B] ml-3"
+              />
+
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                required 
+                onChange={handleChange}
+                required
+                className="bg-transparent w-full px-3 h-full text-sm text-[#1E2A42] outline-none"
               />
+
             </div>
+
           </div>
 
-          <div className="input-field">
-            <Phone size={15} className="icon" />
-            <input 
-              type="tel" 
-              placeholder="Phone Number" 
+
+          {/* PHONE */}
+
+          <div className="flex items-center bg-white/50 border border-white/40 rounded-xl h-[46px]">
+
+            <Phone
+              size={15}
+              className="text-[#8A7F6B] ml-3"
+            />
+
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Phone Number"
               value={formData.phone}
-              onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              required 
+              onChange={handleChange}
+              required
+              className="bg-transparent w-full px-3 h-full text-sm text-[#1E2A42] outline-none"
             />
+
           </div>
 
-          <div className="input-field">
-            <MapPin size={15} className="icon" />
-            <input 
-              type="text" 
-              placeholder="Delivery Address" 
-              value={formData.address}
-              onChange={(e) => setFormData({...formData, address: e.target.value})}
-              required 
+
+          {/* ADDRESS */}
+
+          <div className="flex items-center bg-white/50 border border-white/40 rounded-xl h-[46px]">
+
+            <MapPin
+              size={15}
+              className="text-[#8A7F6B] ml-3"
             />
+
+            <input
+              type="text"
+              name="address"
+              placeholder="Delivery Address"
+              value={formData.address}
+              onChange={handleChange}
+              required
+              className="bg-transparent w-full px-3 h-full text-sm text-[#1E2A42] outline-none"
+            />
+
           </div>
+
+
+          {/* CITY + PINCODE */}
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="input-field">
-              <input 
-                type="text" 
-                placeholder="City" 
+
+            <div className="flex items-center bg-white/50 border border-white/40 rounded-xl h-[46px]">
+
+              <input
+                type="text"
+                name="city"
+                placeholder="City"
                 value={formData.city}
-                onChange={(e) => setFormData({...formData, city: e.target.value})}
-                required 
+                onChange={handleChange}
+                required
+                className="bg-transparent w-full px-3 h-full text-sm text-[#1E2A42] outline-none"
               />
+
             </div>
-            <div className="input-field">
-              <input 
-                type="text" 
-                placeholder="Pincode" 
+
+
+            <div className="flex items-center bg-white/50 border border-white/40 rounded-xl h-[46px]">
+
+              <input
+                type="text"
+                name="pincode"
+                placeholder="Pincode"
                 value={formData.pincode}
-                onChange={(e) => setFormData({...formData, pincode: e.target.value})}
-                required 
+                onChange={handleChange}
+                required
+                className="bg-transparent w-full px-3 h-full text-sm text-[#1E2A42] outline-none"
               />
+
             </div>
+
           </div>
 
-          <div className="input-field">
-            <MessageCircle size={15} className="icon" />
-            <textarea 
+
+          {/* MESSAGE */}
+
+          <div className="flex items-start bg-white/50 border border-white/40 rounded-xl">
+
+            <MessageCircle
+              size={15}
+              className="text-[#8A7F6B] ml-3 mt-3"
+            />
+
+            <textarea
+              name="message"
               placeholder="Any message for the seller?"
               value={formData.message}
-              onChange={(e) => setFormData({...formData, message: e.target.value})}
+              onChange={handleChange}
+              className="bg-transparent w-full px-3 py-3 h-20 text-sm text-[#1E2A42] outline-none resize-none"
             />
+
           </div>
 
-          <div className="flex items-start gap-2 text-xs text-[#5B6478] cursor-pointer select-none group pt-1">
-            <input 
-              type="checkbox" 
+
+          {/* TERMS */}
+
+          <div className="flex items-start gap-2 text-xs text-[#5B6478] pt-1">
+
+            <input
+              type="checkbox"
+              name="agreeTerms"
               checked={formData.agreeTerms}
-              onChange={(e) => setFormData({...formData, agreeTerms: e.target.checked})}
-              required 
-              className="h-3.5 w-3.5 mt-0.5 rounded border-[#D9C7A3] accent-[#C9A567] cursor-pointer" 
+              onChange={handleChange}
+              required
+              className="h-3.5 w-3.5 mt-0.5 accent-[#C9A567]"
             />
-            <span className="group-hover:text-[#1E2A42] transition">
-              I agree to the <span className="text-[#C9A567] font-medium hover:underline">Claim Terms</span>
+
+            <span>
+              I agree to the{" "}
+              <span className="text-[#C9A567] font-medium">
+                Claim Terms
+              </span>
             </span>
+
           </div>
 
-          <button 
-            type="submit" 
+
+          {/* SUBMIT */}
+
+          <button
+            type="submit"
             disabled={isSubmitting}
-            className="seal-btn w-full py-3 mt-1 bg-[#C9A567] text-[#1E2A42] rounded-full text-sm font-semibold shadow-[0_12px_28px_-10px_rgba(201,165,103,0.5)] hover:bg-[#B8934F] transition flex items-center justify-center gap-2 group disabled:opacity-50"
+            className="w-full py-3 mt-1 bg-[#C9A567] text-[#1E2A42] rounded-full text-sm font-semibold shadow-[0_12px_28px_-10px_rgba(201,165,103,0.5)] hover:bg-[#B8934F] transition flex items-center justify-center gap-2 disabled:opacity-50"
           >
+
             {isSubmitting ? (
-              <>⏳ Processing...</>
-            ) : (
+
               <>
-                <span>Submit Claim</span>
-                <CheckCircle size={15} className="group-hover:scale-110 transition" />
+                ⏳ Checking account...
               </>
+
+            ) : (
+
+              <>
+                <span>
+                  Submit Claim
+                </span>
+
+                <CheckCircle
+                  size={15}
+                />
+
+              </>
+
             )}
+
           </button>
+
         </form>
 
+
+        {/* FOOTER */}
+
         <p className="text-center text-[10px] text-[#8A7F6B] mt-4">
-          <Clock size={12} className="inline mr-1" />
+
+          <Clock
+            size={12}
+            className="inline mr-1"
+          />
+
           The seller will contact you within 24 hours.
+
         </p>
+
       </div>
+
     </div>
   );
 };

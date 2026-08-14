@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-
+import axios from 'axios';
+console.log("🎯 GUESS THE BOOK COMPONENT LOADED");
 const GuessTheBook = () => {
   const [currentRound, setCurrentRound] = useState(0);
   const [score, setScore] = useState(0);
@@ -16,24 +17,51 @@ const GuessTheBook = () => {
     { title: "The Hobbit", author: "J.R.R. Tolkien", emoji: "🧙", clue: "An unexpected journey" },
   ];
 
-  const handleGuess = (title) => {
-    if (title === books[currentRound].title) {
-      setScore(score + 1);
-      setKoinsEarned(koinsEarned + 15);
-      setRevealed(true);
-    } else {
-      setRevealed(true);
+  const handleGuess = async (title) => {
+  console.log("🔥 GUESS CLICKED");
+  console.log("Selected:", title);
+  console.log("Correct answer:", books[currentRound].title);
+
+  // rest of your code...
+  if (title === books[currentRound].title) {
+    setScore((prev) => prev + 1);
+    setRevealed(true);
+
+    try {
+      const userId = localStorage.getItem("userId");
+
+      if (!userId) {
+        console.log("User ID not found");
+        return;
+      }
+
+      await axios.post("http://localhost:5000/coin/addcoins", {
+        userId: userId,
+        coins: 15,
+        type: "Guess The Book",
+        description: `Correctly guessed ${books[currentRound].title}`
+      });
+
+      setKoinsEarned((prev) => prev + 15);
+window.dispatchEvent(new Event("koinsUpdated"));
+      console.log("15 KOINS added!");
+    } catch (error) {
+      console.log("Error adding KOINS:", error);
     }
 
-    setTimeout(() => {
-      if (currentRound < books.length - 1) {
-        setCurrentRound(currentRound + 1);
-        setRevealed(false);
-      } else {
-        setShowResult(true);
-      }
-    }, 1500);
-  };
+  } else {
+    setRevealed(true);
+  }
+
+  setTimeout(() => {
+    if (currentRound < books.length - 1) {
+      setCurrentRound((prev) => prev + 1);
+      setRevealed(false);
+    } else {
+      setShowResult(true);
+    }
+  }, 1500);
+};
 
   const resetGame = () => {
     setCurrentRound(0);

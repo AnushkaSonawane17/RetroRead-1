@@ -5,7 +5,6 @@ const {
     handleGetUserBadges
 } = require("../Controller/badgeController");
 
-
 const router = express.Router();
 
 
@@ -13,7 +12,7 @@ const router = express.Router();
 router.get("/badges", handleGetBadges);
 
 
-// Get badges belonging to a particular user
+// Get badges for a particular user
 router.get("/user/:userId", handleGetUserBadges);
 
 

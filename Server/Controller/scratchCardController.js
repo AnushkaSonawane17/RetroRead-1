@@ -1,252 +1,354 @@
-// const Coin = require("../Model/coinModel");
-// const Transaction = require("../Model/transactionModel");
-
-
-// // ADD COINS TO USER
-// const addCoinsToUser = async (
-//     userId,
-//     coins,
-//     type,
-//     description
-// ) => {
-
-//     let coinData = await Coin.findOne({ userId });
-
-//     // If user doesn't have a coin account yet
-//     if (!coinData) {
-//         coinData = await Coin.create({
-//             userId,
-//             balance: 0
-//         });
-//     }
-
-//     // Add coins
-//     coinData.balance += coins;
-
-//     await coinData.save();
-
-//     // Create transaction history
-//     await Transaction.create({
-//         userId,
-//         type,
-//         coins,
-//         description
-//     });
-
-//     return coinData.balance;
-// };
-
-
-// // DAILY BONUS
-// const handleDailyBonus = async (req, res) => {
-
-//     try {
-
-//         const { userId } = req.body;
-
-//         let coinData = await Coin.findOne({ userId });
-
-//         // If user doesn't have a coin account yet
-//         if (!coinData) {
-
-//             coinData = await Coin.create({
-//                 userId,
-//                 balance: 0
-//             });
-
-//         }
-
-//         const now = new Date();
-
-//         // Check whether bonus was already claimed
-//         if (coinData.lastDailyBonus) {
-
-//             const timeDifference =
-//                 now - coinData.lastDailyBonus;
-
-//             const hoursPassed =
-//                 timeDifference / (1000 * 60 * 60);
-
-//             if (hoursPassed < 24) {
-
-//                 return res.status(400).json({
-//                     Message: "Daily bonus already claimed"
-//                 });
-
-//             }
-//         }
-
-//         // Add 25 coins
-//         coinData.balance += 25;
-
-//         // Update bonus time
-//         coinData.lastDailyBonus = now;
-
-//         await coinData.save();
-
-//         // Create transaction
-//         await Transaction.create({
-//             userId,
-//             type: "Daily Bonus",
-//             coins: 25,
-//             description: "Daily bonus claimed"
-//         });
-
-//         return res.status(200).json({
-//             Message: "Daily bonus added",
-//             balance: coinData.balance
-//         });
-
-//     } catch (err) {
-
-//         return res.status(500).json({
-//             Message: err.message
-//         });
-
-//     }
-// };
-
-
-// // GET TRANSACTIONS
-// const handleGetTransactions = async (req, res) => {
-
-//     try {
-
-//         const { userId } = req.params;
-
-//         const transactions = await Transaction.find({ userId })
-//             .sort({ createdAt: -1 });
-
-//         return res.status(200).json({
-//             transactions
-//         });
-
-//     } catch (err) {
-
-//         return res.status(500).json({
-//             Message: err.message
-//         });
-
-//     }
-// };
-
-
-// // ADD COINS CONTROLLER
-// const handleAddCoins = async (req, res) => {
-
-//     try {
-
-//         const {
-//             userId,
-//             coins,
-//             type,
-//             description
-//         } = req.body;
-
-//         const newBalance = await addCoinsToUser(
-//             userId,
-//             coins,
-//             type,
-//             description
-//         );
-
-//         return res.status(200).json({
-//             Message: "Coins added",
-//             balance: newBalance
-//         });
-
-//     } catch (err) {
-
-//         return res.status(500).json({
-//             Message: err.message
-//         });
-
-//     }
-// };
-
-
-// module.exports = {
-//     handleDailyBonus,
-//     handleGetTransactions,
-//     handleAddCoins,
-//     addCoinsToUser
-// };
 const ScratchCard = require("../Model/scratchCardModel");
 const { addCoinsToUser } = require("./coinController");
 
 
-const handleScratchCard = async (req, res) => {
+// ==========================================
+// GET TODAY'S SCRATCH CARDS
+// ==========================================
+
+const handleGetScratchCards = async (req, res) => {
 
     try {
 
-        const { userId } = req.body;
+        const { userId } = req.params;
 
-
-        // Start of today
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-
-
-        // End of today
-        const endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
-
-
-        // Check if user already scratched today
-        const existingCard = await ScratchCard.findOne({
-            userId,
-            claimedAt: {
-                $gte: startOfDay,
-                $lte: endOfDay
-            }
-        });
-
-
-        if (existingCard) {
+        if (!userId) {
 
             return res.status(400).json({
-                Message: "You have already scratched today's card"
+                Message: "User ID is required"
             });
 
         }
 
 
-        // Possible rewards
-        const rewards = [5, 10, 15, 20, 25];
+        // ==========================================
+        // START OF TODAY
+        // ==========================================
 
+        const startOfDay = new Date();
 
-        // Select random reward
-        const reward =
-            rewards[Math.floor(Math.random() * rewards.length)];
-
-
-        // Add reward to user's coin balance
-        const newBalance = await addCoinsToUser(
-            userId,
-            reward,
-            "Scratch Card",
-            "Scratch card reward"
+        startOfDay.setHours(
+            0,
+            0,
+            0,
+            0
         );
 
 
-        // Save scratch card
-        await ScratchCard.create({
-            userId,
-            reward
-        });
+        // ==========================================
+        // END OF TODAY
+        // ==========================================
 
+        const endOfDay = new Date();
+
+        endOfDay.setHours(
+            23,
+            59,
+            59,
+            999
+        );
+
+
+        // ==========================================
+        // CHECK IF USER ALREADY SCRATCHED
+        // ==========================================
+
+        const existingCard =
+            await ScratchCard.findOne({
+                userId,
+                claimedAt: {
+                    $gte: startOfDay,
+                    $lte: endOfDay
+                }
+            });
+
+
+        // ==========================================
+        // FIVE CARDS
+        // ==========================================
+
+        const cards = [
+            {
+                id: 1,
+                reward: 20
+            },
+            {
+                id: 2,
+                reward: 50
+            },
+            {
+                id: 3,
+                reward: 100
+            },
+            {
+                id: 4,
+                reward: 200
+            },
+            {
+                id: 5,
+                reward: 25
+            }
+        ];
+
+
+        // ==========================================
+        // SHUFFLE CARDS
+        // ==========================================
+
+        cards.sort(
+            () => Math.random() - 0.5
+        );
+
+
+        // ==========================================
+        // IF ALREADY SCRATCHED
+        // ==========================================
+
+        if (existingCard) {
+
+            return res.status(200).json({
+
+                scratched: true,
+
+                reward: existingCard.reward,
+
+                cards: cards.map(card => ({
+                    ...card,
+                    reward: null
+                })),
+
+                Message:
+                    "You have already scratched today's card"
+
+            });
+
+        }
+
+
+        // ==========================================
+        // USER HAS NOT SCRATCHED
+        // ==========================================
 
         return res.status(200).json({
-            Message: "Scratch card scratched successfully",
-            reward: reward,
-            balance: newBalance
+
+            scratched: false,
+
+            cards: cards.map(card => ({
+
+                id: card.id,
+
+                reward: null
+
+            })),
+
+            Message:
+                "Scratch cards loaded successfully"
+
         });
 
 
-    } catch (err) {
+    } catch (error) {
+
+        console.log(
+            "GET SCRATCH CARDS ERROR:",
+            error
+        );
 
         return res.status(500).json({
-            Message: err.message
+
+            Message:
+                "Unable to load scratch cards",
+
+            error:
+                error.message
+
+        });
+
+    }
+
+};
+
+
+
+// ==========================================
+// SCRATCH ONE CARD
+// ==========================================
+
+const handleScratchCard = async (req, res) => {
+
+    try {
+
+        const {
+            userId,
+            cardId
+        } = req.body;
+
+
+        // ==========================================
+        // VALIDATION
+        // ==========================================
+
+        if (!userId) {
+
+            return res.status(400).json({
+                Message: "User ID is required"
+            });
+
+        }
+
+
+        if (!cardId) {
+
+            return res.status(400).json({
+                Message: "Card ID is required"
+            });
+
+        }
+
+
+        // ==========================================
+        // START OF TODAY
+        // ==========================================
+
+        const startOfDay = new Date();
+
+        startOfDay.setHours(
+            0,
+            0,
+            0,
+            0
+        );
+
+
+        // ==========================================
+        // END OF TODAY
+        // ==========================================
+
+        const endOfDay = new Date();
+
+        endOfDay.setHours(
+            23,
+            59,
+            59,
+            999
+        );
+
+
+        // ==========================================
+        // CHECK IF ALREADY SCRATCHED
+        // ==========================================
+
+        const existingCard =
+            await ScratchCard.findOne({
+
+                userId,
+
+                claimedAt: {
+                    $gte: startOfDay,
+                    $lte: endOfDay
+                }
+
+            });
+
+
+        if (existingCard) {
+
+            return res.status(400).json({
+
+                Message:
+                    "You have already scratched today's card",
+
+                reward:
+                    existingCard.reward
+
+            });
+
+        }
+
+
+        // ==========================================
+        // POSSIBLE REWARDS
+        // ==========================================
+
+        const rewards = [
+            20,
+            50,
+            100,
+            200,
+            25
+        ];
+
+
+        // ==========================================
+        // RANDOM REWARD
+        // ==========================================
+
+        const reward =
+            rewards[
+                Math.floor(
+                    Math.random() *
+                    rewards.length
+                )
+            ];
+
+
+        // ==========================================
+        // ADD KOINS
+        // ==========================================
+
+        const newBalance =
+            await addCoinsToUser(
+                userId,
+                reward,
+                "Scratch Card",
+                "Daily scratch card reward"
+            );
+
+
+        // ==========================================
+        // SAVE SCRATCH
+        // ==========================================
+
+        await ScratchCard.create({
+
+            userId,
+
+            reward,
+
+            claimedAt: new Date()
+
+        });
+
+
+        // ==========================================
+        // RESPONSE
+        // ==========================================
+
+        return res.status(200).json({
+
+            Message:
+                "Scratch card scratched successfully",
+
+            reward,
+
+            balance:
+                newBalance
+
+        });
+
+
+    } catch (error) {
+
+        console.log(
+            "SCRATCH CARD ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+
+            Message:
+                error.message
+
         });
 
     }
@@ -255,5 +357,9 @@ const handleScratchCard = async (req, res) => {
 
 
 module.exports = {
+
+    handleGetScratchCards,
+
     handleScratchCard
+
 };

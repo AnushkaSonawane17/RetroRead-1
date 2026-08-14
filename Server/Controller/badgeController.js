@@ -2,7 +2,10 @@ const Badge = require("../Model/badgeModel");
 const UserBadge = require("../Model/userBadgeModel");
 
 
+// ==========================================
 // GET ALL AVAILABLE BADGES
+// ==========================================
+
 const handleGetBadges = async (req, res) => {
 
     try {
@@ -24,30 +27,32 @@ const handleGetBadges = async (req, res) => {
 };
 
 
+// ==========================================
 // GET BADGES FOR A USER
+// ==========================================
+
 const handleGetUserBadges = async (req, res) => {
 
     try {
 
         const { userId } = req.params;
 
-        // Get all badges available in RetroRead
+        // Get every badge available in RetroRead
         const allBadges = await Badge.find();
 
-        // Check each badge for this user
+        // Make sure this user has a UserBadge record
+        // for every available badge
         for (const badge of allBadges) {
 
             const existingUserBadge = await UserBadge.findOne({
-                userId,
+                userId: userId,
                 badgeId: badge._id
             });
 
-            // If user doesn't have this badge record yet,
-            // create it with 0 progress
             if (!existingUserBadge) {
 
                 await UserBadge.create({
-                    userId,
+                    userId: userId,
                     badgeId: badge._id,
                     progress: 0,
                     unlocked: false,
@@ -58,16 +63,18 @@ const handleGetUserBadges = async (req, res) => {
 
         }
 
-        // Now get all badge records for this user
-        const userBadges = await UserBadge.find({
-            userId
-        }).populate("badgeId");
+        // Get user's badges
+        const userBadges = await UserBadge
+            .find({ userId: userId })
+            .populate("badgeId");
 
         return res.status(200).json({
             badges: userBadges
         });
 
     } catch (err) {
+
+        console.log(err);
 
         return res.status(500).json({
             Message: err.message
@@ -77,6 +84,10 @@ const handleGetUserBadges = async (req, res) => {
 
 };
 
+
+// ==========================================
+// EXPORT
+// ==========================================
 
 module.exports = {
     handleGetBadges,

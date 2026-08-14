@@ -12,13 +12,13 @@ const badges = [
         target: 1
     },
 
-    {
-        name: "Bookworm",
-        description: "Read 100 books",
-        icon: "🐛",
-        requirementType: "books",
-        target: 100
-    },
+   {
+    name: "Bookworm",
+    description: "Read 10 books",
+    icon: "🐛",
+    requirementType: "books",
+    target: 10
+},
 
     {
         name: "Streak Master",
